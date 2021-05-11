@@ -177,8 +177,6 @@ namespace NET5
         {
             path = path.Remove(0, 1);
 
-            bool resourceExisted = Directory.Exists(path) || File.Exists(path);
-
             if (Directory.Exists(path))
             {
                 lock (Program.consoleLock)
@@ -189,18 +187,25 @@ namespace NET5
                 return;
             }
 
+            bool resourceExisted = File.Exists(path);
+
             lock (Program.consoleLock)
                 Console.WriteLine($"PUT file {path}");
 
             var buf = new byte[1024 * 4];
 
-            int totalReceived = 0;
+            int totalReceived = 0, maxRead = buf.Length;
 
             using FileStream stream = new(path, FileMode.Create, FileAccess.Write);
 
             while(totalReceived < contentLength)
             {
-                int receivedBytes = networkStream.Read(buf);
+                int leftToRead = contentLength - totalReceived;
+
+                if (maxRead > leftToRead)
+                    maxRead = leftToRead;
+
+                int receivedBytes = networkStream.Read(buf, 0, maxRead);
 
                 if (receivedBytes == 0)
                     return;
@@ -220,7 +225,7 @@ namespace NET5
             if (!Directory.Exists(path) && !File.Exists(path))
             {
                 lock (Program.consoleLock)
-                    Console.WriteLine($"File {path} not found");
+                    Console.WriteLine($"File or directory {path} not found");
 
                 SendResponse(HTTPResponse.NotFound);
 

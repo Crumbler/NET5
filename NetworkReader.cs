@@ -24,11 +24,9 @@ namespace NET5
 
             bool lastR = false;
 
-            char c;
-
             while(true)
             {
-                c = (char)stream.ReadByte();
+                var c = (char)stream.ReadByte();
 
                 builder.Append(c);
 
